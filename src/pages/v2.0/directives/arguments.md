@@ -11,6 +11,7 @@ Argument directives can be used on any field of an Object Type.
 Node directives can be placed on Object/Input Type nodes.
 
 * [**@bcrypt** directive](#bcrypt) used to run the `bcrypt` on the attached argument.
+* [**@scope** directive](#scope) TODO
 * [**@validate** directive](#validate) used to validate the input of a field.
 
 <br />

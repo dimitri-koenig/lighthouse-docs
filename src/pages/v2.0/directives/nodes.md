@@ -10,6 +10,11 @@ Node directives can be placed on Object/Input Type nodes.
 
 * [**@group** directive](#group) Ad a namespace and/or middleware.
 * [**@interface** directive](#interface) Used for defining Interfaces.
+* [**@model** directive](#model) TODO
+* [**@node** directive](#node) TODO
+* [**@scalar** directive](#scalar) TODO
+* [**@security** directive](#security) TODO
+* [**@union** directive](#union) TODO
 
 <br />
 

@@ -10,15 +10,22 @@ Field directives can be attached to any field of an Object Type.
 
 * [**@auth** directive](#auth) provides the currently authenticated user.
 * [**@belongsTo** directive](#belongsTo) eager loads the eloquent relationship.
+* [**@can** directive](#can) check authorizations against a model
+* [**@complexity** directive](#complexity) calculates complexity 
 * [**@create** directive](#create) its used to create new records.
 * [**@delete** directive](#delete) used to delete.
 * [**@event** directive](#event) allows you to fire a Laravel event.
 * [**@field** directive](#field) points to a class and method used to resolve a field.
+* [**@first** directive](#first) finds a single model according to given filters, similar to the `@paginate` directive
+* [**@find** directive](#find) the same as the `@first` directive with the difference that if there are more then one result an error will be returned
 * [**@globalId** directive](#globalId) converts a globalId field back to it's original id.
 * [**@hasMany** directive](#hasMany) used to create a connection between two eloquent models.
 * [**@inject** directive](#inject) can be used to inject a value from the context.
+* [**@method** directive](#method) used to call a method on the model to resolve a field
+* [**@middleware** directive](#middleware) TODO
 * [**@paginate** directive](#paginate) similar to `@hasMany` in that it return a `paginator` or `relay` connection.
 * [**@rename** directive](#rename) used to rename on argument on the server side.
+* [**@update** directive](#update) TODO
 
 <br />
 
@@ -79,6 +86,47 @@ type Post {
   # or we could use the `relation` argument and use
   # a different field name
   user @belongsTo(relation: "author")
+}
+```
+
+<a name="can"></a>
+
+### @can
+
+The `@can` directive can be used to check authorization against a model. It requires a `model` argument which should be the namespace of the model, and a `if` argument which can be a string or an array. If an array is provided then **all** policies have to be granted.
+
+Some examples:
+
+```graphql
+type Mutation {
+  updateSubscriptionBilling(
+    account: Int
+  ) Subscription 
+    @can(if: "updateBilling", model: "App\\Subscription")
+}
+```
+
+```graphql
+type User {
+  jobs: [Job] @hasMany @can(if: ["view", "deep-look"], model: "App\\Job")
+}
+```
+
+<a name="complexity"></a>
+
+### @complexity
+
+The `@complexity` directive can be attached to fields to calculate complexity (default calculation provided for relationships). It requires a `resolver` argument which should be the namespace of the model, and a `if` argument which can be a string or an array. If an array is provided then **all** policies have to be granted.
+
+Some examples:
+
+```graphql
+type User {
+    # default calculation
+    posts: [Post!]! @hasMany @complexity
+
+    # custom calculation
+    posts: [Post!]! @hasMany @complexity(resolver: "App\\Http\\GraphQL\\Complexity@userPosts")
 }
 ```
 
@@ -144,6 +192,57 @@ type Mutation {
     @field(resolver: "App\\Http\\GraphQL\\Mutations\\PostMutator@delete")
 }
 ```
+
+<a name="first"></a>
+
+### @first
+
+The `@field` directive finds a single model according to given filters, similar to the `@paginate` directive.
+
+Searches for a user using either a given id or email:
+
+```graphql
+type Query {
+    user(id: ID @eq, email: String @eq): User @find(model: "App\\User")
+}
+```
+
+Or with scopes:
+
+```graphql
+type Query {
+    user(name: String @eq, company: String!): User @find(model: "App\\User" scopes: [companyName])
+}
+```
+
+... where your query could look like this:
+
+```graphql
+{
+    user(company: "MyCompany") {
+        id
+        name
+    }
+}
+```
+
+.. and your scope code look like this:
+
+```php
+    public function scopeCompanyName($query, $args)
+    {
+        return $query->whereHas('company', function($q) use ($args){
+            $q->where('name', $args['company']);
+        });
+    }
+```
+
+<a name="find"></a>
+
+### @find
+
+The `@field` directive works the same as the `@first` directive with the only difference that if there are more then one result an error will be returned.
+
 
 <a name="globalId"></a>
 
@@ -215,5 +314,17 @@ The `@rename` directive can be used to rename on argument on the server side. Th
 ```graphql
 type User {
   createdAt: String! @rename(attribute: "created_at")
+}
+```
+
+<a name="method"></a>
+
+### @method
+
+The `@method` directive can be used to call a method on the target model. This comes in handy if the data is not accessable via get attribute (e.x. getMyDataAttribute -> myData) but via a method like $myModel->myData(). It requires the `name` argument
+
+```graphql
+type User {
+  mySpecialData: String! @method(name: "findMySpecialData")
 }
 ```
